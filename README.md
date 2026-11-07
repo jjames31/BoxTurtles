@@ -1,5 +1,7 @@
 # BoxTurtles
 
+The public detection website lives in [`dashboard/`](dashboard/README.md): real `best.pt` inference, image/video uploads, persisted jobs, gallery, GPS map and Linux/Docker deployment. The original local demo remains available as a separate legacy mode.
+
 ## AI-Powered Eastern Box Turtle Detection
 
 BoxTurtles is a computer vision project focused on identifying Eastern Box Turtles (*Terrapene carolina*) using AI-powered object detection.

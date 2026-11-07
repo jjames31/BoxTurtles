@@ -1,0 +1,7 @@
+:80 {
+    # No proxy request-body size cap; the application setting controls uploads.
+    reverse_proxy app:8000 {
+        header_up X-Forwarded-For {remote_host}
+    }
+    header Strict-Transport-Security "max-age=31536000"
+}

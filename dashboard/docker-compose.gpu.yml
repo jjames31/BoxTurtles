@@ -1,0 +1,8 @@
+services:
+  app:
+    build:
+      args:
+        TORCH_INDEX_URL: https://download.pytorch.org/whl/cu128
+    environment:
+      TURTLE_DEVICE: auto
+    gpus: all

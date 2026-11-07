@@ -60,7 +60,7 @@ def main():
         print("Install dependencies first: python -m pip install -r requirements.txt")
         return 1
     frontend = ROOT / "frontend"
-    built = frontend / "dist" / "index.html"
+    built = frontend / "dist-legacy" / "index.html"
     inputs = [frontend / "package.json", frontend / "package-lock.json", frontend / "index.html", frontend / "vite.config.js"]
     inputs += list((frontend / "src").rglob("*")) + list((frontend / "public").rglob("*"))
     stale = not built.exists() or any(p.is_file() and p.stat().st_mtime > built.stat().st_mtime for p in inputs)
@@ -78,7 +78,7 @@ def main():
             print("Frontend dependencies are missing. Run npm ci inside frontend/, then restart.")
             return 1
         print("Building the React dashboard…", flush=True)
-        result = subprocess.run([npm, "run", "build"], cwd=frontend)
+        result = subprocess.run([npm, "run", "build:legacy"], cwd=frontend)
         if result.returncode:
             return result.returncode
     print("\nAsian Baddies is available at http://127.0.0.1:8000", flush=True)

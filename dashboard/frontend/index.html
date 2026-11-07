@@ -3,20 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#121212" />
-    <script>
-      // Restore appearance before the first paint, including when browser storage is disabled.
-      try {
-        document.documentElement.dataset.theme = localStorage.getItem('asian-baddies-theme') === 'light' ? 'light' : 'dark';
-        const textSize = Number(localStorage.getItem('terrapin-text-size'));
-        document.documentElement.style.fontSize = `${[16, 18, 20].includes(textSize) ? textSize : 18}px`;
-      } catch { document.documentElement.dataset.theme = 'dark'; }
-      document.documentElement.style.colorScheme = document.documentElement.dataset.theme;
-      document.querySelector('meta[name="theme-color"]').content = document.documentElement.dataset.theme === 'light' ? '#f5f6f5' : '#121212';
-    </script>
-    <meta name="description" content="Asian Baddies is a local turtle survey workspace for reviewing aerial detections, recording verified sightings, and processing drone footage." />
-    <title>Asian Baddies · Turtle survey workspace</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#f6f7f3" />
+    <meta name="description" content="BoxTurtles field intelligence: upload images and videos, detect turtles, and explore discoveries." />
+    <title>BoxTurtles · Field Intelligence</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='12' fill='%23245c43'/%3E%3Ctext x='8' y='34' font-size='30'%3E🐢%3C/text%3E%3C/svg%3E" />
   </head>
   <body><div id="root"></div><script type="module" src="/src/main.jsx"></script></body>
 </html>

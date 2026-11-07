@@ -20,3 +20,5 @@ frontend/dist/
 test-results/
 playwright-report/
 *.log
+public-data/
+frontend/dist-legacy/

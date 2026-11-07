@@ -22,20 +22,33 @@ class DemoDetector:
 
 
 class YoloDetector:
-    def __init__(self, path: Path, labels: list[str]):
+    def __init__(self, path: Path, labels: list[str], device="cpu"):
         if not path.is_file() or path.suffix.lower() != ".pt":
             raise ValueError("Select an existing local .pt file. Model downloads are disabled.")
         try:
             from ultralytics import YOLO
         except ImportError as exc:
             raise ValueError("Install requirements-yolo.txt to enable local YOLO inference; demo mode remains available.") from exc
+        self.device = device
         self.labels = {label.casefold().strip() for label in labels}
         self.model = YOLO(str(path), task="detect")
         self.lock = RLock()
 
+    def clone_uninitialized(self):
+        """Copy loaded weights before predictor warmup; never reload the checkpoint per job."""
+        from copy import deepcopy
+        if self.model.predictor is not None:
+            raise ValueError("Create worker copies before predictor initialization.")
+        clone = object.__new__(type(self))
+        clone.device = self.device
+        clone.labels = set(self.labels)
+        clone.model = deepcopy(self.model)
+        clone.lock = RLock()
+        return clone
+
     def predict(self, image, threshold):
         with self.lock:
-            results = self.model.predict(source=image, conf=threshold, device="cpu", verbose=False, save=False)
+            results = self.model.predict(source=image, conf=threshold, device=self.device, verbose=False, save=False)
             candidates = []
             for result in results:
                 if result.boxes is None:

@@ -1,0 +1,42 @@
+services:
+  app:
+    build: .
+    env_file: .env
+    ports:
+      - "127.0.0.1:${TURTLE_BIND_PORT:-8000}:8000"
+    volumes:
+      - turtle-data:/data
+      - ./best.pt:/app/best.pt:ro
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 90s
+    mem_limit: 4g
+    cpus: 2
+    pids_limit: 256
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+  proxy:
+    image: caddy:2-alpine
+    profiles: [https]
+    environment:
+      TURTLE_DOMAIN: ${TURTLE_DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      app:
+        condition: service_started
+    restart: unless-stopped
+volumes:
+  turtle-data:
+  caddy-data:
+  caddy-config:

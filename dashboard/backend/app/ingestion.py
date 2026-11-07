@@ -35,7 +35,7 @@ def predict_frame(image: Image.Image, selection):
 
 def save_frame(session, storage: Path, image: Image.Image, filename: str, source: str, metadata: CaptureMetadata,
                selection=None, candidates: list[Candidate] | None = None, model_id="external", model_name="External detector", is_mock=False,
-               is_demo=False, original_bytes: bytes | None = None, predicted: list[Candidate] | None = None):
+               is_demo=False, original_bytes: bytes | None = None, predicted: list[Candidate] | None = None, extra_metadata: dict | None = None, combined_annotation=False):
     local_inference = candidates is None
     if candidates is None:
         if selection is None:
@@ -60,7 +60,7 @@ def save_frame(session, storage: Path, image: Image.Image, filename: str, source
             saved_files.append(folder / "source.bin")
         record = CapturedImage(id=image_id, original_image_path=original, filename=filename, width=image.width, height=image.height,
                                source=source, latitude=metadata.latitude, longitude=metadata.longitude, captured_at=metadata.captured_at,
-                               is_demo=is_demo, metadata_info=metadata.info())
+                               is_demo=is_demo, metadata_info=metadata.info() | (extra_metadata or {}))
         session.add(record)
         session.flush()
         created = []
@@ -91,6 +91,15 @@ def save_frame(session, storage: Path, image: Image.Image, filename: str, source
                     and not is_mock and not is_demo and candidate.confidence >= selection.auto_accept_threshold
                     and label in {"turtle", "box turtle"}):
                 auto_accept_ids.append(detection_id)
+        if combined_annotation:
+            combined = image.copy()
+            draw = ImageDraw.Draw(combined)
+            for candidate in candidates:
+                x1, y1, x2, y2 = candidate.bounding_box
+                draw.rectangle((x1, y1, x2, y2), outline="#6ce3ac", width=max(2, image.width // 250))
+                draw.text((x1 + 5, max(0, y1 - 16)), f"{candidate.class_name} {candidate.confidence:.1%}", fill="#6ce3ac")
+            combined.save(folder / "annotated.jpg", quality=93)
+            saved_files.append(folder / "annotated.jpg")
         if auto_accept_ids:
             session.flush()
             # Only candidates from this newly created frame are eligible. An

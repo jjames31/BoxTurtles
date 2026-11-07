@@ -4,9 +4,9 @@ import logging
 from pathlib import Path
 
 from fastapi import HTTPException
-from sqlalchemy import delete, select, text
+from sqlalchemy import delete, select, text, update
 
-from .db import CapturedImage, Detection, uid
+from .db import CapturedImage, Detection, uid, now
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ def _move_file(source, destination):
     source.replace(destination)
 
 
-def delete_rejected_photos(session, storage, image_ids):
+def delete_rejected_photos(session, storage, image_ids, *, reject_pending=False):
     """Serialize review/deletion writers and roll back media moves on failed commits.
 
     Media is moved outside the public /media mount before records are removed.
@@ -61,6 +61,15 @@ def delete_rejected_photos(session, storage, image_ids):
         if len(images) != len(image_ids):
             raise HTTPException(404, "One or more selected photos no longer exist. Refresh the archive; no photos were deleted.")
         records = session.scalars(select(Detection).where(Detection.image_id.in_(image_ids))).all()
+        if reject_pending:
+            if any(record.status not in {"pending", "rejected"} for record in records):
+                raise HTTPException(409, "This image contains verified detections. Reset them to pending before rejecting and deleting the image; nothing was changed.")
+            pending_ids = [record.id for record in records if record.status == "pending"]
+            if pending_ids:
+                changed = session.execute(update(Detection).where(Detection.id.in_(pending_ids), Detection.status == "pending").values(
+                    status="rejected", reviewed_at=now(), review_method="human", auto_accept_threshold=None))
+                if changed.rowcount != len(pending_ids):
+                    raise HTTPException(409, "A detection changed status; nothing was deleted. Refresh and try again.")
         if {record.image_id for record in records} != set(image_ids) or any(record.status != "rejected" for record in records):
             raise HTTPException(409, "A selected photo has pending or verified detections. Only photos with all detections rejected can be deleted; no photos were deleted.")
 
@@ -71,6 +80,9 @@ def delete_rejected_photos(session, storage, image_ids):
         selected_paths = []
         for image in images:
             selected_paths.extend(_image_paths(image.id, image.original_image_path))
+            combined = f"{image.id}/annotated.jpg"
+            if (media / combined).is_file():
+                selected_paths.append(combined)
         for record in records:
             selected_paths.extend([record.cropped_image_path, record.annotated_image_path])
         paths = {_media_path(media, value) for value in selected_paths}
